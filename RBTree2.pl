@@ -1,49 +1,46 @@
 :- use_module(library(rbtrees)).
 
-read_items(File, Items) :-
-    setup_call_cleanup(
-        open(File, read, Stream),
-        read_term(Stream, Term, []),
-        close(Stream)
-    ),
-    Term = (_ = Items).
+leer_items(Archivo, Items) :-
+    open(Archivo, read, Flujo),
+    read_term(Flujo, TerminoItems, []),
+    close(Flujo),
+    TerminoItems = (_ = Items).
 
-make_carnet_tree(Tree) :-
-    read_items('names2.txt', Items),
-    rb_empty(Empty),
-    add_students(Items, Empty, Tree).
+crear_arbol_carnet(Arbol) :-
+    leer_items('names2.txt', Items),
+    rb_empty(ArbolVacio),
+    agregar_estudiantes(Items, ArbolVacio, Arbol).
 
-add_students([], Tree, Tree).
-add_students([StudentEntry|Rest], Tree0, Tree) :-
-    student_entry(StudentEntry, Carnet, Name),
-    rb_insert(Tree0, Carnet, Name, Tree1),
-    add_students(Rest, Tree1, Tree).
+agregar_estudiantes([], Arbol, Arbol).
+agregar_estudiantes([Entrada|Resto], Arbol0, Arbol) :-
+    obtener_texto_estudiante(Entrada, TextoEstudiante),
+    separar_estudiante(TextoEstudiante, Carnet, Nombre),
+    rb_insert(Arbol0, Carnet, Nombre, Arbol1),
+    agregar_estudiantes(Resto, Arbol1, Arbol).
 
-student_entry(StudentText-_, Carnet, Name) :-
-    parse_student_text(StudentText, Carnet, Name).
-student_entry(StudentText, Carnet, Name) :-
-    parse_student_text(StudentText, Carnet, Name).
+obtener_texto_estudiante(TextoEstudiante-_, TextoEstudiante).
+obtener_texto_estudiante(TextoEstudiante, TextoEstudiante).
 
-parse_student_text(StudentText, Carnet, Name) :-
-    atom_string(StudentText, Text),
-    split_string(Text, "-", " ", [NameText, CarnetText]),
-    number_string(Carnet, CarnetText),
-    atom_string(Name, NameText).
+separar_estudiante(TextoEstudiante, Carnet, Nombre) :-
+    atom_string(TextoEstudiante, Texto),
+    split_string(Texto, "-", " ", [TextoNombre, TextoCarnet]),
+    number_string(Carnet, TextoCarnet),
+    atom_string(Nombre, TextoNombre).
 
-first_items(0, _, []) :- !.
-first_items(_, [], []).
-first_items(N, [Item|Rest], [Item|First]) :-
+primeros_estudiantes(0, _, []).
+primeros_estudiantes(_, [], []).
+primeros_estudiantes(N, [Estudiante|Resto], [Estudiante|Primeros]) :-
     N > 0,
-    Next is N - 1,
-    first_items(Next, Rest, First).
+    SiguienteN is N - 1,
+    primeros_estudiantes(SiguienteN, Resto, Primeros).
 
-example :-
-    make_carnet_tree(Tree),
-    rb_lookup(241018, Name, Tree),
-    format("Carnet 241018 belongs to: ~w~n", [Name]),
+ejemplo :-
+    crear_arbol_carnet(Arbol),
+    rb_lookup(241018, Nombre, Arbol),
+    format("El carnet 241018 pertenece a: ~w~n", [Nombre]),
 
-    rb_visit(Tree, StudentsByCarnet),
-    length(StudentsByCarnet, Count),
-    first_items(10, StudentsByCarnet, FirstTen),
-    format("Students loaded: ~w~n", [Count]),
-    format("First 10 students by carnet: ~w~n", [FirstTen]).
+    rb_visit(Arbol, EstudiantesPorCarnet),
+    length(EstudiantesPorCarnet, Cantidad),
+    primeros_estudiantes(10, EstudiantesPorCarnet, PrimerosDiez),
+    format("Estudiantes cargados: ~w~n", [Cantidad]),
+    format("Primeros 10 estudiantes por carnet: ~w~n", [PrimerosDiez]).
